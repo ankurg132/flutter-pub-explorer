@@ -25,18 +25,32 @@ export interface PackageDetails {
     name: string;
     latest: {
         version: string;
+        published?: string;
         pubspec: {
             name: string;
             version: string;
             description: string;
             homepage?: string;
             repository?: string;
-            dependencies?: Record<string, string>;
+            dependencies?: Record<string, any>;
+            environment?: {
+                sdk?: string;
+                flutter?: string;
+            };
         };
     };
     versions: Array<{
         version: string;
+        published?: string;
     }>;
+}
+
+export interface PackageScore {
+    grantedPoints: number;
+    maxPoints: number;
+    likeCount: number;
+    downloadCount30Days: number;
+    tags: string[];
 }
 
 export class PubDevApi {
@@ -61,6 +75,12 @@ export class PubDevApi {
 
     async getPackageDetails(packageName: string): Promise<PackageDetails> {
         const url = `${this.baseUrl}/packages/${encodeURIComponent(packageName)}`;
+        const response = await this.fetch(url);
+        return JSON.parse(response);
+    }
+
+    async getPackageScore(packageName: string): Promise<PackageScore> {
+        const url = `${this.baseUrl}/packages/${encodeURIComponent(packageName)}/score`;
         const response = await this.fetch(url);
         return JSON.parse(response);
     }
