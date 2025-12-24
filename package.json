@@ -1,0 +1,58 @@
+{
+  "name": "flutter-pub-explorer",
+  "displayName": "Flutter Pub Explorer",
+  "description": "Browse, search, and add pub.dev packages to your Flutter project",
+  "version": "0.0.1",
+  "publisher": "flutter-pub-explorer",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "flutterPubExplorer.openExplorer",
+        "title": "Flutter Pub Explorer: Browse Packages"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "flutter-pub-explorer",
+          "title": "Pub Explorer",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "flutter-pub-explorer": [
+        {
+          "type": "webview",
+          "id": "flutterPubExplorer.packagesView",
+          "name": "Packages"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "eslint": "^8.54.0",
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "node-fetch": "^2.7.0"
+  }
+}
