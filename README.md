@@ -1,6 +1,6 @@
 # Flutter Pub Explorer
 
-A VSCode extension to browse, search, and add pub.dev packages to your Flutter project.
+A VSCode extension to browse, search, and add pub.dev packages directly in your Flutter project.
 
 ## Features
 
