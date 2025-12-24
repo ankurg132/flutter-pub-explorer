@@ -45,10 +45,19 @@ export class PackagesViewProvider implements vscode.WebviewViewProvider {
                 case 'viewOnPubDev':
                     vscode.env.openExternal(vscode.Uri.parse(`https://pub.dev/packages/${message.packageName}`));
                     break;
+                case 'loadFilter':
+                    await this.loadFilteredPackages(message.filter, message.page || 1);
+                    break;
+                case 'loadFilterMore':
+                    await this.loadMorePackages(message.filter, message.page);
+                    break;
+                case 'searchMore':
+                    await this.searchMorePackages(message.query, message.page);
+                    break;
             }
         });
 
-        this.loadPopularPackages();
+        this.loadFilteredPackages('popular');
     }
 
     private async searchPackages(query: string): Promise<void> {
@@ -84,6 +93,10 @@ export class PackagesViewProvider implements vscode.WebviewViewProvider {
     }
 
     private async loadPopularPackages(): Promise<void> {
+        await this.loadFilteredPackages('popular');
+    }
+
+    private async loadFilteredPackages(filter: string, page: number = 1): Promise<void> {
         if (this.isLoading) {
             return;
         }
@@ -92,7 +105,8 @@ export class PackagesViewProvider implements vscode.WebviewViewProvider {
         this.updateView({ loading: true });
 
         try {
-            const result = await this.api.getFlutterPackages();
+            const result = await this.getFilteredResult(filter, page);
+
             this.packages = result.packages.map(p => ({ package: p.package }));
 
             const detailsPromises = this.packages.slice(0, 10).map(async (pkg) => {
@@ -105,12 +119,103 @@ export class PackagesViewProvider implements vscode.WebviewViewProvider {
             });
 
             this.packages = await Promise.all(detailsPromises);
-            this.updateView({ packages: this.packages, query: '' });
+            this.updateView({ packages: this.packages, query: '', hasMore: !!result.next });
         } catch (error) {
             vscode.window.showErrorMessage(`Failed to load packages: ${error}`);
             this.updateView({ error: 'Failed to load packages' });
         } finally {
             this.isLoading = false;
+        }
+    }
+
+    private async getFilteredResult(filter: string, page: number = 1) {
+        switch (filter) {
+            case 'popular':
+                return await this.api.getPopularPackages(page);
+            case 'favorites':
+                return await this.api.getFlutterFavorites(page);
+            case 'trending':
+                return await this.api.getTrendingPackages(page);
+            case 'top-rated':
+                return await this.api.getTopRatedPackages(page);
+            case 'new':
+                return await this.api.getNewPackages(page);
+            case 'updated':
+                return await this.api.getRecentlyUpdated(page);
+            case 'android':
+            case 'ios':
+            case 'web':
+            case 'windows':
+            case 'macos':
+            case 'linux':
+                return await this.api.getPlatformPackages(filter, page);
+            case 'ui':
+            case 'state':
+            case 'networking':
+            case 'storage':
+            case 'firebase':
+            case 'utils':
+                return await this.api.getCategoryPackages(filter, page);
+            default:
+                return await this.api.getPopularPackages(page);
+        }
+    }
+
+    private async loadMorePackages(filter: string, page: number): Promise<void> {
+        try {
+            const result = await this.getFilteredResult(filter, page);
+            const newPackages = result.packages.map(p => ({ package: p.package }));
+
+            const detailsPromises = newPackages.slice(0, 10).map(async (pkg) => {
+                try {
+                    const details = await this.api.getPackageDetails(pkg.package);
+                    return { package: pkg.package, details };
+                } catch {
+                    return { package: pkg.package };
+                }
+            });
+
+            const packagesWithDetails = await Promise.all(detailsPromises);
+            this._view?.webview.postMessage({
+                command: 'packagesMore',
+                packages: packagesWithDetails,
+                hasMore: !!result.next
+            });
+        } catch (error) {
+            this._view?.webview.postMessage({
+                command: 'packagesMore',
+                packages: [],
+                hasMore: false
+            });
+        }
+    }
+
+    private async searchMorePackages(query: string, page: number): Promise<void> {
+        try {
+            const result = await this.api.searchPackages(query, page);
+            const newPackages = result.packages.map(p => ({ package: p.package }));
+
+            const detailsPromises = newPackages.slice(0, 10).map(async (pkg) => {
+                try {
+                    const details = await this.api.getPackageDetails(pkg.package);
+                    return { package: pkg.package, details };
+                } catch {
+                    return { package: pkg.package };
+                }
+            });
+
+            const packagesWithDetails = await Promise.all(detailsPromises);
+            this._view?.webview.postMessage({
+                command: 'packagesMore',
+                packages: packagesWithDetails,
+                hasMore: !!result.next
+            });
+        } catch (error) {
+            this._view?.webview.postMessage({
+                command: 'packagesMore',
+                packages: [],
+                hasMore: false
+            });
         }
     }
 
@@ -164,7 +269,7 @@ export class PackagesViewProvider implements vscode.WebviewViewProvider {
         vscode.window.showInformationMessage(`Running: ${command}`);
     }
 
-    private updateView(data: { packages?: Array<{ package: string; details?: PackageDetails }>; query?: string; loading?: boolean; error?: string }): void {
+    private updateView(data: { packages?: Array<{ package: string; details?: PackageDetails }>; query?: string; loading?: boolean; error?: string; hasMore?: boolean }): void {
         this._view?.webview.postMessage({
             command: 'update',
             ...data
@@ -231,6 +336,148 @@ export class PackagesViewProvider implements vscode.WebviewViewProvider {
 
         .search-btn:hover {
             background-color: var(--vscode-button-hoverBackground);
+        }
+
+        .action-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .browse-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            font-size: 12px;
+            border: 1px solid var(--vscode-panel-border);
+            background-color: var(--vscode-editor-background);
+            color: var(--vscode-foreground);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .browse-btn:hover {
+            background-color: var(--vscode-list-hoverBackground);
+            border-color: var(--vscode-focusBorder);
+        }
+
+        .clear-btn {
+            padding: 6px 14px;
+            font-size: 12px;
+            border: none;
+            background-color: var(--vscode-button-secondaryBackground);
+            color: var(--vscode-button-secondaryForeground);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .clear-btn:hover {
+            background-color: var(--vscode-button-secondaryHoverBackground);
+        }
+
+        .filter-screen {
+            display: none;
+        }
+
+        .filter-screen.active {
+            display: block;
+        }
+
+        .filter-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .filter-title {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .filter-category {
+            margin-bottom: 20px;
+        }
+
+        .filter-category-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--vscode-descriptionForeground);
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .filter-option {
+            padding: 8px 16px;
+            font-size: 12px;
+            border: 1px solid var(--vscode-panel-border);
+            background-color: var(--vscode-editor-background);
+            color: var(--vscode-foreground);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-option:hover {
+            background-color: var(--vscode-list-hoverBackground);
+            border-color: var(--vscode-focusBorder);
+        }
+
+        .filter-option .filter-option-title {
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .filter-option .filter-option-desc {
+            font-size: 10px;
+            color: var(--vscode-descriptionForeground);
+        }
+
+        .active-filter {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            font-size: 11px;
+            background-color: var(--vscode-badge-background);
+            color: var(--vscode-badge-foreground);
+            border-radius: 12px;
+            margin-left: 8px;
+        }
+
+        .active-filter .remove-filter {
+            cursor: pointer;
+            opacity: 0.7;
+            font-size: 14px;
+            line-height: 1;
+        }
+
+        .active-filter .remove-filter:hover {
+            opacity: 1;
+        }
+
+        .loading-more {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            padding: 15px;
+            color: var(--vscode-descriptionForeground);
+            font-size: 12px;
+        }
+
+        .loading-more .spinner {
+            width: 16px;
+            height: 16px;
         }
 
         .package-list {
@@ -667,14 +914,150 @@ export class PackagesViewProvider implements vscode.WebviewViewProvider {
                 <input type="text" id="searchInput" placeholder="Search packages..." />
                 <button class="search-btn" onclick="search()">Search</button>
             </div>
+            <div class="action-row" id="actionRow">
+                <button class="browse-btn" onclick="openFilterScreen()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                    </svg>
+                    Browse
+                </button>
+            </div>
+            <div class="action-row" id="clearRow" style="display: none;">
+                <button class="clear-btn" onclick="clearSearch()">
+                    Clear Search
+                </button>
+            </div>
         </div>
 
-        <div class="header-title" id="resultsHeader">Flutter Packages</div>
+        <div class="header-title" id="resultsHeader">
+            Packages
+            <span class="active-filter" id="activeFilter" style="display: none;">
+                <span id="activeFilterName">Popular</span>
+                <span class="remove-filter" onclick="clearFilter()">×</span>
+            </span>
+        </div>
 
         <div id="content">
             <div class="loading">
                 <div class="spinner"></div>
                 Loading packages...
+            </div>
+        </div>
+
+        <div id="loadingMore" class="loading-more" style="display: none;">
+            <div class="spinner"></div>
+            Loading more...
+        </div>
+    </div>
+
+    <!-- Filter Screen -->
+    <div id="filterScreen" class="filter-screen">
+        <div class="filter-header">
+            <button class="back-btn" onclick="closeFilterScreen()">
+                <span>&#8592;</span> Back
+            </button>
+            <div class="filter-title">Browse Packages</div>
+        </div>
+
+        <div class="filter-category">
+            <div class="filter-category-title">By Popularity</div>
+            <div class="filter-options">
+                <button class="filter-option" onclick="applyFilter('popular')">
+                    <div class="filter-option-title">Most Popular</div>
+                    <div class="filter-option-desc">Highest downloads</div>
+                </button>
+                <button class="filter-option" onclick="applyFilter('trending')">
+                    <div class="filter-option-title">Trending</div>
+                    <div class="filter-option-desc">Fast growing packages</div>
+                </button>
+                <button class="filter-option" onclick="applyFilter('top-rated')">
+                    <div class="filter-option-title">Top Rated</div>
+                    <div class="filter-option-desc">Highest pub points</div>
+                </button>
+            </div>
+        </div>
+
+        <div class="filter-category">
+            <div class="filter-category-title">By Quality</div>
+            <div class="filter-options">
+                <button class="filter-option" onclick="applyFilter('favorites')">
+                    <div class="filter-option-title">Flutter Favorites</div>
+                    <div class="filter-option-desc">Officially recommended</div>
+                </button>
+            </div>
+        </div>
+
+        <div class="filter-category">
+            <div class="filter-category-title">By Recency</div>
+            <div class="filter-options">
+                <button class="filter-option" onclick="applyFilter('new')">
+                    <div class="filter-option-title">New Packages</div>
+                    <div class="filter-option-desc">Recently created</div>
+                </button>
+                <button class="filter-option" onclick="applyFilter('updated')">
+                    <div class="filter-option-title">Recently Updated</div>
+                    <div class="filter-option-desc">Latest updates</div>
+                </button>
+            </div>
+        </div>
+
+        <div class="filter-category">
+            <div class="filter-category-title">By Platform</div>
+            <div class="filter-options">
+                <button class="filter-option" onclick="applyFilter('android')">
+                    <div class="filter-option-title">Android</div>
+                    <div class="filter-option-desc">Android support</div>
+                </button>
+                <button class="filter-option" onclick="applyFilter('ios')">
+                    <div class="filter-option-title">iOS</div>
+                    <div class="filter-option-desc">iOS support</div>
+                </button>
+                <button class="filter-option" onclick="applyFilter('web')">
+                    <div class="filter-option-title">Web</div>
+                    <div class="filter-option-desc">Flutter Web support</div>
+                </button>
+                <button class="filter-option" onclick="applyFilter('windows')">
+                    <div class="filter-option-title">Windows</div>
+                    <div class="filter-option-desc">Windows desktop</div>
+                </button>
+                <button class="filter-option" onclick="applyFilter('macos')">
+                    <div class="filter-option-title">macOS</div>
+                    <div class="filter-option-desc">macOS desktop</div>
+                </button>
+                <button class="filter-option" onclick="applyFilter('linux')">
+                    <div class="filter-option-title">Linux</div>
+                    <div class="filter-option-desc">Linux desktop</div>
+                </button>
+            </div>
+        </div>
+
+        <div class="filter-category">
+            <div class="filter-category-title">By Category</div>
+            <div class="filter-options">
+                <button class="filter-option" onclick="applyFilter('ui')">
+                    <div class="filter-option-title">UI Components</div>
+                    <div class="filter-option-desc">Widgets & animations</div>
+                </button>
+                <button class="filter-option" onclick="applyFilter('state')">
+                    <div class="filter-option-title">State Management</div>
+                    <div class="filter-option-desc">Provider, Bloc, etc.</div>
+                </button>
+                <button class="filter-option" onclick="applyFilter('networking')">
+                    <div class="filter-option-title">Networking</div>
+                    <div class="filter-option-desc">HTTP & API tools</div>
+                </button>
+                <button class="filter-option" onclick="applyFilter('storage')">
+                    <div class="filter-option-title">Storage</div>
+                    <div class="filter-option-desc">Local databases</div>
+                </button>
+                <button class="filter-option" onclick="applyFilter('firebase')">
+                    <div class="filter-option-title">Firebase</div>
+                    <div class="filter-option-desc">Firebase packages</div>
+                </button>
+                <button class="filter-option" onclick="applyFilter('utils')">
+                    <div class="filter-option-title">Utilities</div>
+                    <div class="filter-option-desc">Helper packages</div>
+                </button>
             </div>
         </div>
     </div>
@@ -692,6 +1075,122 @@ export class PackagesViewProvider implements vscode.WebviewViewProvider {
     <script>
         const vscode = acquireVsCodeApi();
         let packages = [];
+        let currentFilter = 'popular';
+        let isSearchMode = false;
+        let currentPage = 1;
+        let isLoadingMore = false;
+        let hasMorePages = true;
+
+        const filterLabels = {
+            'popular': 'Popular Packages',
+            'favorites': 'Flutter Favorites',
+            'trending': 'Trending Packages',
+            'top-rated': 'Top Rated Packages',
+            'new': 'New Packages',
+            'updated': 'Recently Updated',
+            'android': 'Android Packages',
+            'ios': 'iOS Packages',
+            'web': 'Web Packages',
+            'windows': 'Windows Packages',
+            'macos': 'macOS Packages',
+            'linux': 'Linux Packages',
+            'ui': 'UI Components',
+            'state': 'State Management',
+            'networking': 'Networking',
+            'storage': 'Storage',
+            'firebase': 'Firebase',
+            'utils': 'Utilities'
+        };
+
+        function openFilterScreen() {
+            document.getElementById('listScreen').classList.add('hidden');
+            document.getElementById('filterScreen').classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        function closeFilterScreen() {
+            document.getElementById('filterScreen').classList.remove('active');
+            document.getElementById('listScreen').classList.remove('hidden');
+        }
+
+        function applyFilter(filter) {
+            currentFilter = filter;
+            isSearchMode = false;
+            currentPage = 1;
+            hasMorePages = true;
+
+            // Update filter chip
+            const filterChip = document.getElementById('activeFilter');
+            const filterName = document.getElementById('activeFilterName');
+            filterChip.style.display = 'inline-flex';
+            filterName.textContent = filterLabels[filter] || filter;
+
+            // Show browse button, hide clear button
+            document.getElementById('actionRow').style.display = 'flex';
+            document.getElementById('clearRow').style.display = 'none';
+            document.getElementById('searchInput').value = '';
+
+            // Close filter screen and show list
+            closeFilterScreen();
+
+            // Request packages
+            vscode.postMessage({ command: 'loadFilter', filter, page: 1 });
+        }
+
+        function clearFilter() {
+            currentFilter = 'popular';
+            currentPage = 1;
+            hasMorePages = true;
+            document.getElementById('activeFilter').style.display = 'none';
+            vscode.postMessage({ command: 'loadFilter', filter: 'popular', page: 1 });
+        }
+
+        function loadMore() {
+            if (isLoadingMore || !hasMorePages) return;
+
+            isLoadingMore = true;
+            currentPage++;
+            document.getElementById('loadingMore').style.display = 'flex';
+
+            if (isSearchMode) {
+                const query = document.getElementById('searchInput').value.trim();
+                vscode.postMessage({ command: 'searchMore', query, page: currentPage });
+            } else {
+                vscode.postMessage({ command: 'loadFilterMore', filter: currentFilter, page: currentPage });
+            }
+        }
+
+        // Infinite scroll - load more when near bottom
+        window.addEventListener('scroll', () => {
+            const listScreen = document.getElementById('listScreen');
+            if (listScreen.classList.contains('hidden')) return;
+
+            const scrollTop = window.scrollY;
+            const windowHeight = window.innerHeight;
+            const documentHeight = document.documentElement.scrollHeight;
+
+            // Load more when within 200px of the bottom
+            if (documentHeight - scrollTop - windowHeight < 200) {
+                loadMore();
+            }
+        });
+
+        function clearSearch() {
+            isSearchMode = false;
+            currentPage = 1;
+            hasMorePages = true;
+            document.getElementById('searchInput').value = '';
+            document.getElementById('actionRow').style.display = 'flex';
+            document.getElementById('clearRow').style.display = 'none';
+
+            // Show filter chip if there was a filter
+            if (currentFilter !== 'popular') {
+                document.getElementById('activeFilter').style.display = 'inline-flex';
+                document.getElementById('activeFilterName').textContent = filterLabels[currentFilter] || currentFilter;
+            }
+
+            vscode.postMessage({ command: 'loadFilter', filter: currentFilter, page: 1 });
+        }
 
         document.getElementById('searchInput').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
@@ -702,7 +1201,13 @@ export class PackagesViewProvider implements vscode.WebviewViewProvider {
         function search() {
             const query = document.getElementById('searchInput').value.trim();
             if (query) {
-                vscode.postMessage({ command: 'search', query });
+                isSearchMode = true;
+                currentPage = 1;
+                hasMorePages = true;
+                document.getElementById('actionRow').style.display = 'none';
+                document.getElementById('clearRow').style.display = 'flex';
+                document.getElementById('activeFilter').style.display = 'none';
+                vscode.postMessage({ command: 'search', query, page: 1 });
             }
         }
 
@@ -984,11 +1489,21 @@ export class PackagesViewProvider implements vscode.WebviewViewProvider {
                         \`;
                     } else if (message.packages) {
                         packages = message.packages;
-                        const header = message.query
-                            ? \`Search results for "\${message.query}"\`
-                            : 'Flutter Packages';
-                        document.getElementById('resultsHeader').textContent = header;
+                        hasMorePages = message.hasMore !== false;
                         renderPackages(packages);
+                    }
+                    break;
+
+                case 'packagesMore':
+                    isLoadingMore = false;
+                    document.getElementById('loadingMore').style.display = 'none';
+
+                    if (message.packages && message.packages.length > 0) {
+                        packages = packages.concat(message.packages);
+                        hasMorePages = message.hasMore !== false;
+                        appendPackages(message.packages);
+                    } else {
+                        hasMorePages = false;
                     }
                     break;
 
@@ -1006,27 +1521,35 @@ export class PackagesViewProvider implements vscode.WebviewViewProvider {
                 return;
             }
 
-            content.innerHTML = packages.map(pkg => {
-                const details = pkg.details;
-                const name = pkg.package;
-                const version = details?.latest?.version || '';
-                const description = details?.latest?.pubspec?.description || 'No description available';
+            content.innerHTML = packages.map(pkg => renderPackageCard(pkg)).join('');
+        }
 
-                return \`
-                    <div class="package-card" onclick="showDetails('\${name}')">
-                        <div class="package-header">
-                            <span class="package-name">\${name}</span>
-                            \${version ? \`<span class="package-version">v\${version}</span>\` : ''}
-                        </div>
-                        <div class="package-description">\${escapeHtml(description)}</div>
-                        <div class="package-actions">
-                            <button class="add-btn" onclick="event.stopPropagation(); addPackage('\${name}')">
-                                flutter pub add
-                            </button>
-                        </div>
+        function appendPackages(newPackages) {
+            const content = document.getElementById('content');
+            const html = newPackages.map(pkg => renderPackageCard(pkg)).join('');
+            content.insertAdjacentHTML('beforeend', html);
+        }
+
+        function renderPackageCard(pkg) {
+            const details = pkg.details;
+            const name = pkg.package;
+            const version = details?.latest?.version || '';
+            const description = details?.latest?.pubspec?.description || 'No description available';
+
+            return \`
+                <div class="package-card" onclick="showDetails('\${name}')">
+                    <div class="package-header">
+                        <span class="package-name">\${name}</span>
+                        \${version ? \`<span class="package-version">v\${version}</span>\` : ''}
                     </div>
-                \`;
-            }).join('');
+                    <div class="package-description">\${escapeHtml(description)}</div>
+                    <div class="package-actions">
+                        <button class="add-btn" onclick="event.stopPropagation(); addPackage('\${name}')">
+                            flutter pub add
+                        </button>
+                    </div>
+                </div>
+            \`;
         }
 
         function escapeHtml(text) {
