@@ -9,6 +9,23 @@ A VSCode extension to browse, search, and add pub.dev packages to your Flutter p
 - View package details including version history
 - Add packages to your Flutter project with one click (`flutter pub add`)
 
+## Screenshots
+
+### Package Details
+![Package Details](screenshots/package-details.png)
+
+### Browse Packages
+![Browse Packages](screenshots/browse-packages.png)
+
+### Package List
+![Package List](screenshots/package-list.png)
+
+### Filtered Packages
+![Filtered Packages](screenshots/filtered-packages.png)
+
+### Search Packages
+![Search Packages](screenshots/search-packages.png)
+
 ## Usage
 
 1. Open the Pub Explorer panel from the Activity Bar (package icon)
