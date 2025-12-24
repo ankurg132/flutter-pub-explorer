@@ -19,11 +19,10 @@ A VSCode extension to browse, search, and add pub.dev packages to your Flutter p
     <td><img src="screenshots/filtered-packages.png" alt="Filtered Packages" width="250"/></td>
   </tr>
   <tr>
+    <td align="center"><b>Package List</b></td>
     <td align="center"><b>Package Details</b></td>
     <td align="center"><b>Browse Packages</b></td>
-    <td align="center"><b>Package List</b></td>
     <td align="center"><b>Filtered Packages</b></td>
-    <td align="center"><b>Search Packages</b></td>
   </tr>
 </table>
 
