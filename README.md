@@ -13,11 +13,10 @@ A VSCode extension to browse, search, and add pub.dev packages to your Flutter p
 
 <table>
   <tr>
-    <td><img src="screenshots/package-details.png" alt="Package Details" width="200"/></td>
-    <td><img src="screenshots/browse-packages.png" alt="Browse Packages" width="200"/></td>
-    <td><img src="screenshots/package-list.png" alt="Package List" width="200"/></td>
-    <td><img src="screenshots/filtered-packages.png" alt="Filtered Packages" width="200"/></td>
-    <td><img src="screenshots/search-packages.png" alt="Search Packages" width="200"/></td>
+    <td><img src="screenshots/package-list.png" alt="Package List" width="250"/></td>
+    <td><img src="screenshots/package-details.png" alt="Package Details" width="250"/></td>
+    <td><img src="screenshots/browse-packages.png" alt="Browse Packages" width="250"/></td>
+    <td><img src="screenshots/filtered-packages.png" alt="Filtered Packages" width="250"/></td>
   </tr>
   <tr>
     <td align="center"><b>Package Details</b></td>
