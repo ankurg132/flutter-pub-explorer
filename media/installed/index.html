@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Installed Packages</title>
+    <link rel="stylesheet" href="{{stylesUri}}">
+</head>
+<body>
+    <!-- List Screen -->
+    <div id="listScreen" class="list-screen">
+        <div class="header">
+            <div class="header-row">
+                <div class="header-title">Installed Packages</div>
+                <button class="refresh-btn" onclick="refresh()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/>
+                    </svg>
+                    Refresh
+                </button>
+            </div>
+            <div id="statsBar" class="stats-bar" style="display: none;">
+                <div class="stat">
+                    <span class="stat-value" id="totalCount">0</span> packages
+                </div>
+                <div class="stat stat-outdated">
+                    <span class="stat-value" id="outdatedCount">0</span> outdated
+                </div>
+                <div class="stat stat-discontinued">
+                    <span class="stat-value" id="discontinuedCount">0</span> discontinued
+                </div>
+                <div class="stat stat-deprecated">
+                    <span class="stat-value" id="deprecatedCount">0</span> deprecated
+                </div>
+            </div>
+        </div>
+
+        <div id="content">
+            <div class="loading">
+                <div class="spinner"></div>
+                Loading installed packages...
+            </div>
+        </div>
+    </div>
+
+    <!-- Details Screen -->
+    <div id="detailsScreen" class="details-screen">
+        <div class="back-header">
+            <button class="back-btn" onclick="goBack()">
+                <span>&#8592;</span> Back
+            </button>
+        </div>
+        <div id="detailsContent"></div>
+    </div>
+
+    <script src="{{scriptUri}}"></script>
+</body>
+</html>

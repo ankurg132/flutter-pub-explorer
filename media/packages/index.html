@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pub Explorer</title>
+    <link rel="stylesheet" href="{{stylesUri}}">
+</head>
+<body>
+    <!-- List Screen -->
+    <div id="listScreen" class="list-screen">
+        <div class="search-container">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search packages..." />
+                <button class="search-btn" onclick="search()">Search</button>
+            </div>
+            <div class="action-row" id="actionRow">
+                <button class="browse-btn" onclick="openFilterScreen()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                    </svg>
+                    Browse
+                </button>
+            </div>
+            <div class="action-row" id="clearRow" style="display: none;">
+                <button class="clear-btn" onclick="clearSearch()">
+                    Clear Search
+                </button>
+            </div>
+        </div>
+
+        <div class="header-title" id="resultsHeader">
+            Packages
+            <span class="active-filter" id="activeFilter" style="display: none;">
+                <span id="activeFilterName">Popular</span>
+                <span class="remove-filter" onclick="clearFilter()">×</span>
+            </span>
+        </div>
+
+        <div id="content">
+            <div class="loading">
+                <div class="spinner"></div>
+                Loading packages...
+            </div>
+        </div>
+
+        <div id="loadingMore" class="loading-more" style="display: none;">
+            <div class="spinner"></div>
+            Loading more...
+        </div>
+    </div>
+
+    <!-- Filter Screen -->
+    <div id="filterScreen" class="filter-screen">
+        <div class="filter-header">
+            <button class="back-btn" onclick="closeFilterScreen()">
+                <span>&#8592;</span> Back
+            </button>
+            <div class="filter-title">Browse Packages</div>
+        </div>
+
+        <div class="filter-category">
+            <div class="filter-category-title">By Popularity</div>
+            <div class="filter-options">
+                <button class="filter-option" onclick="applyFilter('popular')">
+                    <div class="filter-option-title">Most Popular</div>
+                    <div class="filter-option-desc">Highest downloads</div>
+                </button>
+                <button class="filter-option" onclick="applyFilter('trending')">
+                    <div class="filter-option-title">Trending</div>
+                    <div class="filter-option-desc">Fast growing packages</div>
+                </button>
+                <button class="filter-option" onclick="applyFilter('top-rated')">
+                    <div class="filter-option-title">Top Rated</div>
+                    <div class="filter-option-desc">Highest pub points</div>
+                </button>
+            </div>
+        </div>
+
+        <div class="filter-category">
+            <div class="filter-category-title">By Quality</div>
+            <div class="filter-options">
+                <button class="filter-option" onclick="applyFilter('favorites')">
+                    <div class="filter-option-title">Flutter Favorites</div>
+                    <div class="filter-option-desc">Officially recommended</div>
+                </button>
+            </div>
+        </div>
+
+        <div class="filter-category">
+            <div class="filter-category-title">By Recency</div>
+            <div class="filter-options">
+                <button class="filter-option" onclick="applyFilter('new')">
+                    <div class="filter-option-title">New Packages</div>
+                    <div class="filter-option-desc">Recently created</div>
+                </button>
+                <button class="filter-option" onclick="applyFilter('updated')">
+                    <div class="filter-option-title">Recently Updated</div>
+                    <div class="filter-option-desc">Latest updates</div>
+                </button>
+            </div>
+        </div>
+
+        <div class="filter-category">
+            <div class="filter-category-title">By Platform</div>
+            <div class="filter-options">
+                <button class="filter-option" onclick="applyFilter('android')">
+                    <div class="filter-option-title">Android</div>
+                    <div class="filter-option-desc">Android support</div>
+                </button>
+                <button class="filter-option" onclick="applyFilter('ios')">
+                    <div class="filter-option-title">iOS</div>
+                    <div class="filter-option-desc">iOS support</div>
+                </button>
+                <button class="filter-option" onclick="applyFilter('web')">
+                    <div class="filter-option-title">Web</div>
+                    <div class="filter-option-desc">Flutter Web support</div>
+                </button>
+                <button class="filter-option" onclick="applyFilter('windows')">
+                    <div class="filter-option-title">Windows</div>
+                    <div class="filter-option-desc">Windows desktop</div>
+                </button>
+                <button class="filter-option" onclick="applyFilter('macos')">
+                    <div class="filter-option-title">macOS</div>
+                    <div class="filter-option-desc">macOS desktop</div>
+                </button>
+                <button class="filter-option" onclick="applyFilter('linux')">
+                    <div class="filter-option-title">Linux</div>
+                    <div class="filter-option-desc">Linux desktop</div>
+                </button>
+            </div>
+        </div>
+
+        <div class="filter-category">
+            <div class="filter-category-title">By Category</div>
+            <div class="filter-options">
+                <button class="filter-option" onclick="applyFilter('ui')">
+                    <div class="filter-option-title">UI Components</div>
+                    <div class="filter-option-desc">Widgets & animations</div>
+                </button>
+                <button class="filter-option" onclick="applyFilter('state')">
+                    <div class="filter-option-title">State Management</div>
+                    <div class="filter-option-desc">Provider, Bloc, etc.</div>
+                </button>
+                <button class="filter-option" onclick="applyFilter('networking')">
+                    <div class="filter-option-title">Networking</div>
+                    <div class="filter-option-desc">HTTP & API tools</div>
+                </button>
+                <button class="filter-option" onclick="applyFilter('storage')">
+                    <div class="filter-option-title">Storage</div>
+                    <div class="filter-option-desc">Local databases</div>
+                </button>
+                <button class="filter-option" onclick="applyFilter('firebase')">
+                    <div class="filter-option-title">Firebase</div>
+                    <div class="filter-option-desc">Firebase packages</div>
+                </button>
+                <button class="filter-option" onclick="applyFilter('utils')">
+                    <div class="filter-option-title">Utilities</div>
+                    <div class="filter-option-desc">Helper packages</div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Details Screen -->
+    <div id="detailsScreen" class="details-screen">
+        <div class="back-header">
+            <button class="back-btn" onclick="goBack()">
+                <span>&#8592;</span> Back
+            </button>
+        </div>
+        <div id="detailsContent"></div>
+    </div>
+
+    <script src="{{scriptUri}}"></script>
+</body>
+</html>
