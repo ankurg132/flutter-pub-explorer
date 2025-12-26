@@ -2,7 +2,7 @@
   "name": "flutter-pub-explorer",
   "displayName": "Flutter Pub Explorer",
   "description": "Browse, search, and add pub.dev packages to your Flutter project",
-  "version": "1.0.2",
+  "version": "2.0.0",
   "publisher": "semikolan",
   "icon": "media/icon.png",
   "repository": {
