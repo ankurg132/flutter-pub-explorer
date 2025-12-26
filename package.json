@@ -39,6 +39,11 @@
           "type": "webview",
           "id": "flutterPubExplorer.packagesView",
           "name": "Packages"
+        },
+        {
+          "type": "webview",
+          "id": "flutterPubExplorer.installedPackagesView",
+          "name": "Installed"
         }
       ]
     }

@@ -57,6 +57,13 @@ export class PackagesViewProvider implements vscode.WebviewViewProvider {
             }
         });
 
+        // Restore cached data when view becomes visible
+        webviewView.onDidChangeVisibility(() => {
+            if (webviewView.visible && this.packages.length > 0) {
+                this.updateView({ packages: this.packages, query: this.currentQuery });
+            }
+        });
+
         this.loadFilteredPackages('popular');
     }
 
