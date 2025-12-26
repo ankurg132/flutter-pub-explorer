@@ -16,13 +16,13 @@ A VSCode extension to browse, search, and add pub.dev packages directly in your 
     <td><img src="screenshots/package-list.png" alt="Package List" width="250"/></td>
     <td><img src="screenshots/package-details.png" alt="Package Details" width="250"/></td>
     <td><img src="screenshots/browse-packages.png" alt="Browse Packages" width="250"/></td>
-    <td><img src="screenshots/filtered-packages.png" alt="Filtered Packages" width="250"/></td>
+    <td><img src="screenshots/install-package.png" alt="Install Package" width="250"/></td>
   </tr>
   <tr>
     <td align="center"><b>Package List</b></td>
     <td align="center"><b>Package Details</b></td>
     <td align="center"><b>Browse Packages</b></td>
-    <td align="center"><b>Filtered Packages</b></td>
+    <td align="center"><b>Install Package</b></td>
   </tr>
 </table>
 
