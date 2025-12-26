@@ -8,6 +8,9 @@ A VSCode extension to browse, search, and add pub.dev packages directly in your 
 - Search for specific packages
 - View package details including version history
 - Add packages to your Flutter project with one click (`flutter pub add`)
+- View and manage currently installed packages
+- Upgrade to the latest versions of the installed packages with one click.
+- Remove a package from your project with one click (`flutter pub remove`)
 
 ## Screenshots
 
@@ -32,6 +35,9 @@ A VSCode extension to browse, search, and add pub.dev packages directly in your 
 2. Browse the default list of Flutter packages or search for specific ones
 3. Click "flutter pub add" to add a package to your project
 4. Click "Details" to view more information and select specific versions
+5. Switch to the "Installed" view to manage your current project dependencies
+6. Upgrade to the latest versions of the installed packages with one click.
+7. Remove a package from your project with one click (`flutter pub remove`)
 
 ## Requirements
 
