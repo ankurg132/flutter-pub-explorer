@@ -12,6 +12,10 @@ A VSCode extension to browse, search, and add pub.dev packages directly in your 
 - Upgrade to the latest versions of the installed packages with one click.
 - Remove a package from your project with one click (`flutter pub remove`)
 
+## Download:
+The package is available in VSCode marketplace, you can directly install using [this](https://marketplace.visualstudio.com/items?itemName=semikolan.flutter-pub-explorer) link.
+For other IDEs, you can download using OpenVSX [link](https://open-vsx.org/extension/semikolan/flutter-pub-explorer).
+
 ## Screenshots
 
 <table>
